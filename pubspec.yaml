@@ -33,6 +33,8 @@ dependencies:
   page_transition: ^2.0.4
   provider: ^6.0.1
   random_password_generator: ^0.2.1
+  clipboard: ^0.1.3
+  adaptive_dialog: ^1.1.0
 
 dev_dependencies:
   flutter_test:
