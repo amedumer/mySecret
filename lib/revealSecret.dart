@@ -1,17 +1,21 @@
+import 'dart:convert';
+
 import 'package:clipboard/clipboard.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:adaptive_dialog/adaptive_dialog.dart';
+import 'package:my_secret/showResult.dart';
+import 'package:page_transition/page_transition.dart';
 
-class ShowSecret extends StatefulWidget {
-  String message, password, crypted;
-  ShowSecret({this.message, this.password, this.crypted});
+class RevealSecret extends StatefulWidget {
   @override
-  _ShowSecretState createState() => _ShowSecretState();
+  _RevealSecretState createState() => _RevealSecretState();
 }
 
-class _ShowSecretState extends State<ShowSecret> {
+class _RevealSecretState extends State<RevealSecret> {
   bool isObsecure = true;
+  String key = "", password = "", message = "";
 
   void showHelp() {
     showOkAlertDialog(
@@ -24,6 +28,67 @@ class _ShowSecretState extends State<ShowSecret> {
             "Anyone trying to validate your secret would need your message and your password. After getting the same key as the output, they would understand the secret is valid.\n\n"
             "Purpose of this application is to be able to make future claims without people knowing what your claim is. You are the only one who can reveal your secret claim.",
         okLabel: "Understood");
+  }
+
+  bool validateSecret() {
+    if (message.length == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        backgroundColor: Colors.white70,
+        content:
+            const Text("You must have secrets to reveal, don't be scared."),
+        duration: const Duration(seconds: 4),
+      ));
+    } else {
+      if (password.length == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          backgroundColor: Colors.white70,
+          content:
+              const Text("You must have a password. Secrets are only yours."),
+          duration: const Duration(seconds: 4),
+        ));
+      } else {
+        if (key.length == 0) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            backgroundColor: Colors.white70,
+            content: const Text("You must have a key. Secrets are only yours."),
+            duration: const Duration(seconds: 4),
+          ));
+        } else {
+          var passwordVar = utf8.encode(password);
+          var bytes = utf8.encode(message);
+
+          var hmacSha256 = Hmac(sha256, passwordVar);
+          var digest = hmacSha256.convert(bytes);
+
+          if (digest.toString() == key) {
+            print("it was said");
+            Navigator.push(
+                context,
+                PageTransition(
+                    type: PageTransitionType.fade,
+                    child: ResultScreen(
+                      result: true,
+                      message: message,
+                      key_: key,
+                      password: password,
+                    )));
+          } else {
+            print("fake news.");
+            Navigator.push(
+                context,
+                PageTransition(
+                    type: PageTransitionType.fade,
+                    child: ResultScreen(
+                      result: false,
+                      message: message,
+                      key_: key,
+                      password: password,
+                    )));
+          }
+        }
+      }
+    }
+    return true;
   }
 
   @override
@@ -45,7 +110,7 @@ class _ShowSecretState extends State<ShowSecret> {
                 SizedBox(
                   height: height * 0.13,
                 ),
-                Text("Your Secret",
+                Text("Reveal a Secret",
                     style: GoogleFonts.lato(
                       textStyle: TextStyle(
                           color: Colors.white,
@@ -57,7 +122,7 @@ class _ShowSecretState extends State<ShowSecret> {
                 SizedBox(
                   height: 5,
                 ),
-                Text("is now buried with you",
+                Text("and it may live forever",
                     style: GoogleFonts.lato(
                       textStyle: TextStyle(
                           color: Colors.white60,
@@ -73,7 +138,7 @@ class _ShowSecretState extends State<ShowSecret> {
                   padding: EdgeInsets.only(bottom: 4),
                   width: width * 0.75,
                   child: Text(
-                    "your key",
+                    "the key",
                     style: GoogleFonts.lato(
                       textStyle: TextStyle(
                           color: Colors.white60,
@@ -85,16 +150,7 @@ class _ShowSecretState extends State<ShowSecret> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {
-                    FlutterClipboard.copy(widget.crypted).then((value) => {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            backgroundColor: Colors.white70,
-                            content: const Text(
-                                "your secret key is copied to the clipboard"),
-                            duration: const Duration(seconds: 3),
-                          ))
-                        });
-                  },
+                  onTap: () {},
                   child: Container(
                     decoration: BoxDecoration(
                         border: Border.all(width: 0.8, color: Colors.white)),
@@ -102,11 +158,11 @@ class _ShowSecretState extends State<ShowSecret> {
                     child: Padding(
                       padding: EdgeInsets.all(15),
                       child: TextFormField(
+                        onChanged: (value) {
+                          key = value;
+                        },
                         textAlignVertical: TextAlignVertical.center,
                         textAlign: TextAlign.center,
-                        initialValue: widget.crypted,
-                        enabled: false,
-                        readOnly: true,
                         style: TextStyle(
                             color: Colors.white60,
                             fontSize: 13,
@@ -122,7 +178,6 @@ class _ShowSecretState extends State<ShowSecret> {
                               left: 10, bottom: 0, top: 0, right: 10),
                         ),
                         maxLines: 3,
-                        maxLength: 256,
                       ),
                     ),
                   ),
@@ -134,7 +189,7 @@ class _ShowSecretState extends State<ShowSecret> {
                   padding: EdgeInsets.only(bottom: 4),
                   width: width * 0.75,
                   child: Text(
-                    "your password",
+                    "the password",
                     style: GoogleFonts.lato(
                       textStyle: TextStyle(
                           color: Colors.white60,
@@ -151,16 +206,7 @@ class _ShowSecretState extends State<ShowSecret> {
                       isObsecure = !isObsecure;
                     });
                   },
-                  onLongPress: () {
-                    FlutterClipboard.copy(widget.message).then((value) => {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            backgroundColor: Colors.white70,
-                            content: const Text(
-                                "your password is copied to the clipboard"),
-                            duration: const Duration(seconds: 3),
-                          ))
-                        });
-                  },
+                  onLongPress: () {},
                   child: Container(
                     decoration: BoxDecoration(
                         border: Border.all(width: 0.8, color: Colors.white)),
@@ -169,11 +215,11 @@ class _ShowSecretState extends State<ShowSecret> {
                       padding:
                           EdgeInsets.symmetric(vertical: 3, horizontal: 15),
                       child: TextFormField(
+                        onChanged: (value) {
+                          password = value;
+                        },
                         obscureText: isObsecure,
                         textAlign: TextAlign.center,
-                        initialValue: widget.password,
-                        enabled: false,
-                        readOnly: true,
                         style: TextStyle(
                             color: Colors.white60,
                             fontSize: 13,
@@ -200,7 +246,7 @@ class _ShowSecretState extends State<ShowSecret> {
                   padding: EdgeInsets.only(bottom: 4),
                   width: width * 0.75,
                   child: Text(
-                    "your secret",
+                    "the secret",
                     style: GoogleFonts.lato(
                       textStyle: TextStyle(
                           color: Colors.white60,
@@ -212,16 +258,7 @@ class _ShowSecretState extends State<ShowSecret> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {
-                    FlutterClipboard.copy(widget.message).then((value) => {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            backgroundColor: Colors.white70,
-                            content: const Text(
-                                "your secret is copied to the clipboard"),
-                            duration: const Duration(seconds: 3),
-                          ))
-                        });
-                  },
+                  onTap: () {},
                   child: Container(
                     decoration: BoxDecoration(
                         border: Border.all(width: 0.8, color: Colors.white)),
@@ -229,9 +266,9 @@ class _ShowSecretState extends State<ShowSecret> {
                     child: Padding(
                       padding: EdgeInsets.all(15),
                       child: TextFormField(
-                        enabled: false,
-                        readOnly: true,
-                        initialValue: widget.message,
+                        onChanged: (value) {
+                          message = value;
+                        },
                         textAlignVertical: TextAlignVertical.center,
                         style: TextStyle(
                             color: Colors.white60,
@@ -288,7 +325,7 @@ class _ShowSecretState extends State<ShowSecret> {
                     ),
                     InkWell(
                       onTap: () {
-                        showHelp();
+                        validateSecret();
                       },
                       enableFeedback: false,
                       child: Container(
@@ -299,7 +336,7 @@ class _ShowSecretState extends State<ShowSecret> {
                                 Border.all(width: 0.8, color: Colors.white)),
                         child: Center(
                           child: Text(
-                            'what do I do?',
+                            'reveal secret',
                             style: GoogleFonts.lato(
                               textStyle: TextStyle(
                                   color: Colors.white,

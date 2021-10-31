@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.kayabasisoft.my_secret">
    <application
-        android:label="my_secret"
+        android:label="mySecret"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

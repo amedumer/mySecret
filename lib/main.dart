@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:my_secret/createSecret.dart';
 import 'package:crypto/crypto.dart';
+import 'package:my_secret/revealSecret.dart';
 import 'package:page_transition/page_transition.dart';
 
 void main() {
@@ -98,7 +99,10 @@ class _MainPageState extends State<MainPage> {
               height: height * 0.04,
             ),
             InkWell(
-              onTap: () => print('OnTap'),
+              onTap: () => Navigator.push(
+                  context,
+                  PageTransition(
+                      type: PageTransitionType.fade, child: RevealSecret())),
               enableFeedback: false,
               child: Container(
                 height: height * 0.08,
